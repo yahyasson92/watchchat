@@ -2,8 +2,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import MessageInput from '@/app/components/MessageInput';
-import { supabase } from '../../../lib/supabaseClient';
-import MessageInput from '../../components/MessageInput';
 
 export default function Room({ params }: { params: { contentId: string; mode: 'global'|'followers' }}) {
   const { contentId, mode } = params;
@@ -16,11 +14,9 @@ export default function Room({ params }: { params: { contentId: string; mode: 'g
     let channel: any;
 
     async function init() {
-      // who am I
       const userRes = await supabase.auth.getUser();
       setMe(userRes.data.user ?? null);
 
-      // find the room for contentId + mode
       const { data: r, error: re } = await supabase
         .from('app.rooms')
         .select('*')
@@ -30,7 +26,6 @@ export default function Room({ params }: { params: { contentId: string; mode: 'g
       if (re || !r) return alert('Room not found');
       setRoom(r);
 
-      // pre-load last 100
       const { data: ms } = await supabase
         .from('app.messages')
         .select('*')
@@ -39,7 +34,6 @@ export default function Room({ params }: { params: { contentId: string; mode: 'g
         .limit(100);
       setMessages(ms || []);
 
-      // subscribe to realtime inserts
       channel = supabase
         .channel(`room:${r.id}`)
         .on(
@@ -49,7 +43,6 @@ export default function Room({ params }: { params: { contentId: string; mode: 'g
         )
         .subscribe();
 
-      // load who I follow (client-side filter for followers mode)
       if (mode === 'followers' && userRes.data.user) {
         const { data: f } = await supabase
           .from('app.follows')
