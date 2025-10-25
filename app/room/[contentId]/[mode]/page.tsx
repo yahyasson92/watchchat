@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { supabase } from '../../../lib/supabaseClient';
-import MessageInput from '../../components/MessageInput';
+import { supabase } from '../../../../lib/supabaseClient';
+import MessageInput from '../../../components/MessageInput';
 
 export default function Room({ params }: { params: { contentId: string; mode: 'global'|'followers' }}) {
   const { contentId, mode } = params;
