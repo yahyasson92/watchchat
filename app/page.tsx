@@ -1,6 +1,5 @@
 'use client';
 import { supabase } from '@/lib/supabaseClient';
-import { supabase } from '../lib/supabaseClient';
 import ContentPicker from './components/ContentPicker';
 
 export default function Home() {
