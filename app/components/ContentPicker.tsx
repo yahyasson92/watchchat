@@ -1,6 +1,5 @@
 'use client';
 import { supabase } from '@/lib/supabaseClient';
-import { supabase } from '../../lib/supabaseClient';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -23,12 +22,12 @@ export default function ContentPicker() {
     const id = (title || '').toLowerCase().replace(/\W+/g, '_').slice(0, 60);
     const { data: { user } } = await supabase.auth.getUser();
     if (!id || !user) return alert('Enter a title and sign in first');
+
     const insert = await supabase.from('app.content').insert({
       id, type: 'game', title, created_by: user.id
     });
     if (insert.error) return alert(insert.error.message);
 
-    // create rooms (global + followers)
     await supabase.from('app.rooms').insert([
       { content_id: id, mode: 'global' },
       { content_id: id, mode: 'followers' }
