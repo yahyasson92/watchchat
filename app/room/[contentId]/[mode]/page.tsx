@@ -18,7 +18,7 @@ export default function Room({ params }: { params: { contentId: string; mode: 'g
       setMe(userRes.data.user ?? null);
 
       const { data: r, error: re } = await supabase
-        .from('app.rooms')
+        .from('rooms')
         .select('*')
         .eq('content_id', contentId)
         .eq('mode', mode)
@@ -27,7 +27,7 @@ export default function Room({ params }: { params: { contentId: string; mode: 'g
       setRoom(r);
 
       const { data: ms } = await supabase
-        .from('app.messages')
+        .from('messages')
         .select('*')
         .eq('room_id', r.id)
         .order('created_at', { ascending: true })
@@ -38,14 +38,14 @@ export default function Room({ params }: { params: { contentId: string; mode: 'g
         .channel(`room:${r.id}`)
         .on(
           'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'app.messages', filter: `room_id=eq.${r.id}` },
+          { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${r.id}` },
           (payload: any) => setMessages(prev => [...prev, payload.new])
         )
         .subscribe();
 
       if (mode === 'followers' && userRes.data.user) {
         const { data: f } = await supabase
-          .from('app.follows')
+          .from('follows')
           .select('target_user_id')
           .eq('user_id', userRes.data.user.id);
         setFollowingIds((f || []).map(x => x.target_user_id));
