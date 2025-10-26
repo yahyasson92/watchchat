@@ -8,11 +8,16 @@ export default function ContentPicker() {
   const [title, setTitle] = useState('');
 
   async function load() {
-    const { data } = await supabase
-      .from('content')
+    const { data, error } = await supabase
+      .from('content') // default schema is 'app'
       .select('*')
       .order('created_at', { ascending: false })
       .limit(20);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
     setItems(data || []);
   }
 
@@ -28,10 +33,12 @@ export default function ContentPicker() {
     });
     if (insert.error) return alert(insert.error.message);
 
-    await supabase.from('rooms').insert([
+    // Create both rooms (global + followers)
+    const rooms = await supabase.from('rooms').insert([
       { content_id: id, mode: 'global' },
       { content_id: id, mode: 'followers' }
     ]);
+    if (rooms.error) return alert(rooms.error.message);
 
     setTitle('');
     load();
@@ -40,7 +47,11 @@ export default function ContentPicker() {
   return (
     <div style={{ marginTop: 24 }}>
       <h3>Create or pick content</h3>
-      <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="E.g., Lakers vs Celtics - Oct 25" />
+      <input
+        value={title}
+        onChange={e=>setTitle(e.target.value)}
+        placeholder="E.g., Lakers vs Celtics - Oct 25"
+      />
       <button onClick={createContent} style={{ marginLeft: 8 }}>Create</button>
       <ul style={{ marginTop: 12 }}>
         {items.map(it => (
