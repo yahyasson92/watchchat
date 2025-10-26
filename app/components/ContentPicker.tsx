@@ -9,7 +9,7 @@ export default function ContentPicker() {
 
   async function load() {
     const { data } = await supabase
-      .from('app.content')
+      .from('content')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(20);
@@ -23,12 +23,12 @@ export default function ContentPicker() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!id || !user) return alert('Enter a title and sign in first');
 
-    const insert = await supabase.from('app.content').insert({
+    const insert = await supabase.from('content').insert({
       id, type: 'game', title, created_by: user.id
     });
     if (insert.error) return alert(insert.error.message);
 
-    await supabase.from('app.rooms').insert([
+    await supabase.from('rooms').insert([
       { content_id: id, mode: 'global' },
       { content_id: id, mode: 'followers' }
     ]);
