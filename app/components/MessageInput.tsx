@@ -26,7 +26,7 @@ export default function MessageInput({ roomId }: { roomId: string }) {
       return;
     }
 
-    const { error } = await supabase.from('app.messages').insert({
+    const { error } = await supabase.from('messages').insert({
       room_id: roomId,
       body: cleaned,
       spoiler,
