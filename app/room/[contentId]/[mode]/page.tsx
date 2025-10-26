@@ -34,14 +34,11 @@ export default function Room({ params }: { params: { contentId: string; mode: 'g
         .limit(100);
       setMessages(ms || []);
 
-      channel = supabase
-        .channel(`room:${r.id}`)
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${r.id}` },
-          (payload: any) => setMessages(prev => [...prev, payload.new])
-        )
-        .subscribe();
+      const channel = supabase.channel(`room:${r.id}`).on(
+  'postgres_changes',
+  { event: 'INSERT', schema: 'app', table: 'messages', filter: `room_id=eq.${r.id}` },
+  (payload: any) => setMessages(prev => [...prev, payload.new])
+).subscribe();
 
       if (mode === 'followers' && userRes.data.user) {
         const { data: f } = await supabase
