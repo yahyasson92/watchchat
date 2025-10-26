@@ -17,34 +17,46 @@ export default function Room({ params }: { params: { contentId: string; mode: 'g
       const userRes = await supabase.auth.getUser();
       setMe(userRes.data.user ?? null);
 
+      // find the room for contentId + mode
       const { data: r, error: re } = await supabase
         .from('rooms')
         .select('*')
         .eq('content_id', contentId)
         .eq('mode', mode)
         .single();
-      if (re || !r) return alert('Room not found');
+      if (re || !r) {
+        alert(re?.message || 'Room not found');
+        return;
+      }
       setRoom(r);
 
-      const { data: ms } = await supabase
+      // pre-load last 100 messages
+      const { data: ms, error: meErr } = await supabase
         .from('messages')
         .select('*')
         .eq('room_id', r.id)
         .order('created_at', { ascending: true })
         .limit(100);
+      if (meErr) alert(meErr.message);
       setMessages(ms || []);
 
-      const channel = supabase.channel(`room:${r.id}`).on(
-  'postgres_changes',
-  { event: 'INSERT', schema: 'app', table: 'messages', filter: `room_id=eq.${r.id}` },
-  (payload: any) => setMessages(prev => [...prev, payload.new])
-).subscribe();
+      // subscribe to realtime inserts for this room (schema: 'app')
+      channel = supabase
+        .channel(`room:${r.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'app', table: 'messages', filter: `room_id=eq.${r.id}` },
+          (payload: any) => setMessages(prev => [...prev, payload.new])
+        )
+        .subscribe();
 
+      // load who I follow (client-side filter for followers mode)
       if (mode === 'followers' && userRes.data.user) {
-        const { data: f } = await supabase
+        const { data: f, error: ferr } = await supabase
           .from('follows')
           .select('target_user_id')
           .eq('user_id', userRes.data.user.id);
+        if (ferr) alert(ferr.message);
         setFollowingIds((f || []).map(x => x.target_user_id));
       }
     }
