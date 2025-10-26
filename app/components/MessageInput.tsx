@@ -11,33 +11,42 @@ export default function MessageInput({ roomId }: { roomId: string }) {
   const [cooldown, setCooldown] = useState(false);
 
   async function send() {
-    if (!text.trim()) return;
-    if (cooldown) return;
+  if (!text.trim()) return;
+  if (cooldown) return;
 
-    setCooldown(true);
-    setTimeout(() => setCooldown(false), 1000); // 1s client cooldown
+  setCooldown(true);
+  setTimeout(() => setCooldown(false), 1000); // 1s client cooldown
 
-    const cleaned = filter.clean(text).slice(0, 700);
+  const cleaned = filter.clean(text).slice(0, 700);
 
-    // Hit our dummy API so the Edge Middleware can rate-limit
-    const res = await fetch('/api/rate-limit', { method: 'POST' });
-    if (res.status === 429) {
-      alert('Rate limit: try again in a moment');
-      return;
-    }
-
-    const { error } = await supabase.from('messages').insert({
-      room_id: roomId,
-      body: cleaned,
-      spoiler,
-    });
-    if (error) {
-      alert(error.message);
-      return;
-    }
-    setText('');
+  // Make sure we're signed in
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    alert('Please sign in first (email magic link).');
+    return;
   }
 
+  // Hit our dummy API so Edge Middleware can rate-limit
+  const res = await fetch('/api/rate-limit', { method: 'POST' });
+  if (res.status === 429) {
+    alert('Rate limit: try again in a moment');
+    return;
+  }
+
+  // ✅ Include user_id so the RLS "with check (user_id = auth.uid())" passes
+  const { error } = await supabase.from('messages').insert({
+    room_id: roomId,
+    user_id: user.id,
+    body: cleaned,
+    spoiler,
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+  setText('');
+}
   return (
     <div style={{ marginTop: 8 }}>
       <input
